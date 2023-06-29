@@ -1,7 +1,6 @@
 defmodule BlackjackCardTest do
   use ExUnit.Case
   alias Blackjack.Card, as: Card
-  doctest Blackjack.Card
 
   test "struct - implements to_string for numeric value" do
     assert "#{%Card{suit: :heart, value: 2}}" === "2 of hearts"

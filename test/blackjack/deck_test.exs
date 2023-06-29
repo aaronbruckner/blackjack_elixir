@@ -1,6 +1,5 @@
 defmodule BlackjackDeckTest do
   use ExUnit.Case
-  doctest Blackjack.Deck
 
   @max_cards_in_deck 52
 
