@@ -2,7 +2,6 @@
 My attempt to create a basic blackjack game as I learn Elixir.
 
 # Todo Items
-* Create Deck which deals cards at random
 * Create player hand
   * Add card
   * Determine max value
