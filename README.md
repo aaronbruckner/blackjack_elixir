@@ -1,6 +1,25 @@
-# BlackjackElixir
+# Blackjack Elixir
+My attempt to create a basic blackjack game as I learn Elixir.
 
-**TODO: Add description**
+# Todo Items
+* Create Deck which deals cards at random
+* Create player hand
+  * Add card
+  * Determine max value
+  * Determine if bust
+* Blackjack round
+  * Determine current player
+  * Allow hit from active player
+  * Allow stand from active player
+  * Resolve dealer hand
+  * Determine winner
+* Create client infrastructure
+  * terminal client
+  * Phoenix Client?
+* Blackjack table
+  * Allow people to join an active table and parcitipate in the next round?
+  * Allow people to leave the table
+  * Allow people to spectate the table?
 
 ## Installation
 
