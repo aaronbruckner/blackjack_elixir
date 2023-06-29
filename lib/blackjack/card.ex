@@ -1,5 +1,4 @@
 defmodule Blackjack.Card do
-
   @typedoc """
   Defines the four allowed suit types a card may be.
   """
@@ -11,9 +10,9 @@ defmodule Blackjack.Card do
   @type value() :: 2..10 | :jack | :queen | :king | :ace
 
   @type t() :: %__MODULE__{
-    suit: suit(),
-    value: value(),
-  }
+          suit: suit(),
+          value: value()
+        }
 
   @enforce_keys [:suit, :value]
   defstruct [:suit, :value]

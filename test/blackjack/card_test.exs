@@ -9,5 +9,4 @@ defmodule BlackjackCardTest do
   test "struct - implements to_string for face value" do
     assert "#{%Blackjack.Card{suit: :spade, value: :king}}" === "king of spades"
   end
-
 end
