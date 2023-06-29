@@ -1,5 +1,6 @@
 defmodule Blackjack.Card do
   alias Blackjack.Card
+
   @typedoc """
   Defines the four allowed suit types a card may be.
   """
