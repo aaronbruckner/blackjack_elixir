@@ -1,4 +1,5 @@
 defmodule Blackjack.Card do
+  alias Blackjack.Card
   @typedoc """
   Defines the four allowed suit types a card may be.
   """
@@ -16,6 +17,9 @@ defmodule Blackjack.Card do
 
   @enforce_keys [:suit, :value]
   defstruct [:suit, :value]
+
+  @spec new(suit(), value()) :: t()
+  def new(suit, value), do: %Card{suit: suit, value: value}
 
   @doc """
   Returns the numeric value for a card. Aces will always return a value of 1.

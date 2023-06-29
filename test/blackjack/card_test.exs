@@ -2,6 +2,10 @@ defmodule BlackjackCardTest do
   use ExUnit.Case
   alias Blackjack.Card, as: Card
 
+  test "new - builds a card" do
+    assert Card.new(:heart, 2) === %Card{suit: :heart, value: 2}
+  end
+
   test "struct - implements to_string for numeric value" do
     assert "#{%Card{suit: :heart, value: 2}}" === "2 of hearts"
   end
