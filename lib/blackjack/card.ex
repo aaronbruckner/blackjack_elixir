@@ -16,6 +16,18 @@ defmodule Blackjack.Card do
 
   @enforce_keys [:suit, :value]
   defstruct [:suit, :value]
+
+  @doc """
+  Returns the numeric value for a card. Aces will always return a value of 1.
+  """
+  @spec point_value(t()) :: integer()
+  def point_value(card) do
+    case card.value do
+      x when is_number(x) -> x
+      :ace -> 1
+      _ -> 10
+    end
+  end
 end
 
 defimpl String.Chars, for: Blackjack.Card do
