@@ -11,6 +11,10 @@ defmodule Blackjack.Card do
   """
   @type value() :: 2..10 | :jack | :queen | :king | :ace
 
+  @typedoc """
+  Describes the state of a single card. If the card is face down, it's suit and value shouldn't
+  be known to other players.
+  """
   @type t() :: %__MODULE__{
           suit: suit(),
           value: value(),
