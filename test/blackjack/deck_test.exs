@@ -43,8 +43,7 @@ defmodule BlackjackDeckTest do
   end
 
   test "pull_top_card - returns unique cards" do
-    Enum.reduce(1..@max_cards_in_deck, {Deck.new(), MapSet.new()}, fn _,
-                                                                                {deck, seenCards} ->
+    Enum.reduce(1..@max_cards_in_deck, {Deck.new(), MapSet.new()}, fn _, {deck, seenCards} ->
       {card, nextDeck} = Deck.pull_top_card(deck)
       cardKey = "#{card}"
 
