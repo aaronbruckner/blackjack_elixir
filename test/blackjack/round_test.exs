@@ -19,7 +19,7 @@ defmodule BlackjackRoundTest do
                 ])
 
   test "start_new_round - creates players" do
-    player_ids = ["p3", "p2", "p1"]
+    player_ids = ["p1", "p2", "p3"]
 
     round = Round.start_new_round(player_ids)
 
@@ -33,7 +33,7 @@ defmodule BlackjackRoundTest do
   end
 
   test "start_new_round - deals 2 cards to each player and dealer" do
-    player_ids = ["p2", "p1"]
+    player_ids = ["p1", "p2"]
 
     round = Round.start_new_round(player_ids)
 
@@ -44,16 +44,25 @@ defmodule BlackjackRoundTest do
   end
 
   test "start_new_round - deals cards from the deck correctly" do
-    player_ids = ["p2", "p1"]
+    player_ids = ["p1", "p2"]
 
     round = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     assert %Round{
              players: [
-               %Player{hand: [%Card{value: 5}, %Card{value: 4}]},
-               %Player{hand: [%Card{value: 3}, %Card{value: 2}]}
+               %Player{hand: [%Card{value: 3}, %Card{value: 2}]},
+               %Player{hand: [%Card{value: 5}, %Card{value: 4}]}
              ],
              dealer_hand: [%Card{value: 7, face_down: false}, %Card{value: 6, face_down: true}]
            } = round
   end
+
+  test "start_new_round - sets correct number of players" do
+    player_ids = ["p1", "p2", "p3"]
+
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    assert %Round{total_players: 3} = round
+  end
+
 end

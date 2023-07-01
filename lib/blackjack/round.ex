@@ -11,7 +11,15 @@ defmodule Blackjack.Round do
   alias Blackjack.Round
   alias Blackjack.Player
 
-  defstruct [:players, :dealer_hand, :deck]
+  @type t() :: %__MODULE__{
+    players: list(Player.t()),
+    dealer_hand: Deck.t(),
+    deck: Deck.t(),
+    total_players: integer(),
+  }
+
+  @enforce_keys [:players, :dealer_hand, :deck, :total_players]
+  defstruct [:players, :dealer_hand, :deck, :total_players]
 
   @doc """
   Starts a new round of blackjack with the list of provided players.
@@ -20,7 +28,7 @@ defmodule Blackjack.Round do
 
   If a deck isn't provided, a 52 card shuffled deck will be used.
   """
-  @spec start_new_round(list(Player.player_id()), keyword()) :: %Round{}
+  @spec start_new_round(list(Player.player_id()), keyword()) :: t()
   def start_new_round(player_ids, options \\ []) do
     deck = Keyword.get(options, :deck, Deck.new())
 
@@ -37,7 +45,7 @@ defmodule Blackjack.Round do
             |> Player.give_card(card1)
             |> Player.give_card(card2)
 
-          {deck, [player | players]}
+          {deck, players ++ [player]}
         end
       )
 
@@ -47,7 +55,8 @@ defmodule Blackjack.Round do
     %Round{
       players: players,
       dealer_hand: [dealerCard2, %Card{dealerCard1 | face_down: true}],
-      deck: deck
+      deck: deck,
+      total_players: length(players)
     }
   end
 end
