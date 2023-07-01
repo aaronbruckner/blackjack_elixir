@@ -3,6 +3,7 @@ defmodule BlackjackRoundTest do
 
   alias Blackjack.Card
   alias Blackjack.Deck
+  alias Blackjack.Event
   alias Blackjack.Player
   alias Blackjack.Round
 
@@ -74,6 +75,40 @@ defmodule BlackjackRoundTest do
              players: [
                %Player{status: :active},
                %Player{status: :waiting}
+             ]
+           } = round
+  end
+
+  test "action_pass - moves to the next player" do
+    player_ids = ["p1", "p2"]
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    {round, events} = Round.action_pass(round, "p1")
+
+    assert %Event{target: "p1", score: 5} = Enum.find(events, &(&1.type === :action_pass))
+
+    assert %Round{
+             players: [
+               %Player{status: :passed},
+               %Player{status: :active}
+             ]
+           } = round
+  end
+
+  test "action_pass - able to pass two players in a row" do
+    player_ids = ["p1", "p2", "p3"]
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    {round, _events} = Round.action_pass(round, "p1")
+    {round, events} = Round.action_pass(round, "p2")
+
+    assert %Event{target: "p2", score: 9} = Enum.find(events, &(&1.type === :action_pass))
+
+    assert %Round{
+             players: [
+               %Player{status: :passed},
+               %Player{status: :passed},
+               %Player{status: :active}
              ]
            } = round
   end

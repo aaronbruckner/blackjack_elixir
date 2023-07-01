@@ -8,6 +8,8 @@ defmodule Blackjack.Round do
 
   alias Blackjack.Card
   alias Blackjack.Deck
+  alias Blackjack.Event
+  alias Blackjack.Hand
   alias Blackjack.Round
   alias Blackjack.Player
 
@@ -53,13 +55,52 @@ defmodule Blackjack.Round do
     {dealerCard1, deck} = Deck.pull_top_card(deck)
     {dealerCard2, deck} = Deck.pull_top_card(deck)
 
-    players
-
     %Round{
       players: players,
       dealer_hand: [dealerCard2, %Card{dealerCard1 | face_down: true}],
       deck: deck,
       total_players: length(players)
+    }
+  end
+
+  @doc """
+  Allows a specific player to issue a "pass" action indicating they want no additional cards.
+  Only the active player can issue this command. The resulting round state and events which
+  ocurred due to this action are returned.
+  """
+  @spec action_pass(t(), Player.player_id()) :: {t(), list(Event.t())}
+  def action_pass(round, player_id) do
+    # TODO: Handle edge case where provided player isn't active player
+    {active_index, active_player} = find_player_and_index(round, player_id)
+
+    round =
+      round
+      |> update_player_status_at_position(active_index, :passed)
+      |> update_player_status_at_position(active_index + 1, :active)
+
+    {round,
+     [
+       %Event{
+         type: :action_pass,
+         target: player_id,
+         score: Hand.max_safe_score(active_player.hand)
+       }
+     ]}
+  end
+
+  @spec find_player_and_index(t(), Player.player_id()) :: {integer(), Player.t()}
+  defp find_player_and_index(round, player_id) do
+    index = Enum.find_index(round.players, fn p -> p.player_id === player_id end)
+    {index, Enum.at(round.players, index)}
+  end
+
+  @spec update_player_status_at_position(t(), integer(), Player.status()) :: t()
+  defp update_player_status_at_position(round, index, status) do
+    player = Enum.at(round.players, index)
+
+    %Round{
+      round
+      | players: List.replace_at(round.players, index, Player.set_status(player, status))
     }
   end
 end
