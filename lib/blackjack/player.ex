@@ -3,12 +3,12 @@ defmodule Blackjack.Player do
   alias Blackjack.Player
   alias Blackjack.Hand
 
-  @type player_status :: :active | :waiting | :busted | :passed
+  @type status :: :active | :waiting | :busted | :passed
   @type player_id() :: String.t()
   @type t() :: %__MODULE__{
           player_id: player_id(),
           hand: Hand.t(),
-          status: player_status()
+          status: status()
         }
 
   @enforce_keys [:player_id, :hand]
@@ -22,5 +22,10 @@ defmodule Blackjack.Player do
   @spec give_card(t(), Card.t()) :: t()
   def give_card(player, card) do
     %{player | hand: Hand.add_card(player.hand, card)}
+  end
+
+  @spec set_status(t(), status()) :: t()
+  def set_status(player, status) do
+    %Player{player | status: status}
   end
 end

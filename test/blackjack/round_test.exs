@@ -65,4 +65,16 @@ defmodule BlackjackRoundTest do
     assert %Round{total_players: 3} = round
   end
 
+  test "start_new_round - sets player statuses correctly" do
+    player_ids = ["p1", "p2"]
+
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    assert %Round{
+             players: [
+               %Player{status: :active},
+               %Player{status: :waiting}
+             ]
+           } = round
+  end
 end

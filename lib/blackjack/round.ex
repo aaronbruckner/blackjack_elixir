@@ -12,11 +12,11 @@ defmodule Blackjack.Round do
   alias Blackjack.Player
 
   @type t() :: %__MODULE__{
-    players: list(Player.t()),
-    dealer_hand: Deck.t(),
-    deck: Deck.t(),
-    total_players: integer(),
-  }
+          players: list(Player.t()),
+          dealer_hand: Deck.t(),
+          deck: Deck.t(),
+          total_players: integer()
+        }
 
   @enforce_keys [:players, :dealer_hand, :deck, :total_players]
   defstruct [:players, :dealer_hand, :deck, :total_players]
@@ -44,6 +44,7 @@ defmodule Blackjack.Round do
             Player.new(player_id)
             |> Player.give_card(card1)
             |> Player.give_card(card2)
+            |> Player.set_status(if players === [], do: :active, else: :waiting)
 
           {deck, players ++ [player]}
         end
@@ -51,6 +52,8 @@ defmodule Blackjack.Round do
 
     {dealerCard1, deck} = Deck.pull_top_card(deck)
     {dealerCard2, deck} = Deck.pull_top_card(deck)
+
+    players
 
     %Round{
       players: players,
