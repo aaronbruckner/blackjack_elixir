@@ -13,14 +13,16 @@ defmodule Blackjack.Card do
 
   @type t() :: %__MODULE__{
           suit: suit(),
-          value: value()
+          value: value(),
+          face_down: boolean()
         }
 
   @enforce_keys [:suit, :value]
-  defstruct [:suit, :value]
+  defstruct [:suit, :value, face_down: false]
 
-  @spec new(suit(), value()) :: t()
-  def new(suit, value), do: %Card{suit: suit, value: value}
+  @spec new(suit(), value(), boolean()) :: t()
+  def new(suit, value, face_down \\ false),
+    do: %Card{suit: suit, value: value, face_down: face_down}
 
   @doc """
   Returns the numeric value for a card. Aces will always return a value of 1.
