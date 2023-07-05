@@ -77,26 +77,30 @@ defmodule Blackjack.Round do
       get_player_at_position(round, current_active_position)
       |> Player.set_status(:passed)
 
-    next_active_position = current_active_position + 1
+    if current_active_player.player_id !== player_id do
+      {round, [Event.new(:invalid_action, player_id)]}
+    else
+      next_active_position = current_active_position + 1
 
-    next_active_player =
-      get_player_at_position(round, next_active_position)
-      |> Player.set_status(:active)
+      next_active_player =
+        get_player_at_position(round, next_active_position)
+        |> Player.set_status(:active)
 
-    round =
-      round
-      |> update_player_at_position(current_active_position, current_active_player)
-      |> update_player_at_position(next_active_position, next_active_player)
+      round =
+        round
+        |> update_player_at_position(current_active_position, current_active_player)
+        |> update_player_at_position(next_active_position, next_active_player)
 
-    {round,
-     [
-       %Event{
-         type: :action_pass,
-         target: player_id,
-         score: Hand.max_safe_score(current_active_player.hand)
-       },
-       Event.new(:new_active_player, next_active_player.player_id)
-     ]}
+      {round,
+       [
+         %Event{
+           type: :action_pass,
+           target: player_id,
+           score: Hand.max_safe_score(current_active_player.hand)
+         },
+         Event.new(:new_active_player, next_active_player.player_id)
+       ]}
+    end
   end
 
   @spec action_hit(t(), Player.player_id()) :: {t(), list(Event.t())}
@@ -110,35 +114,39 @@ defmodule Blackjack.Round do
       get_player_at_position(round, current_active_position)
       |> Player.give_card(card)
 
-    {current_active_player, round, events} =
-      if Hand.is_bust(current_active_player.hand) do
-        next_active_position = current_active_position + 1
+    if current_active_player.player_id !== player_id do
+      {round, [Event.new(:invalid_action, player_id)]}
+    else
+      {current_active_player, round, events} =
+        if Hand.is_bust(current_active_player.hand) do
+          next_active_position = current_active_position + 1
 
-        next_active_player =
-          get_player_at_position(round, next_active_position)
-          |> Player.set_status(:active)
+          next_active_player =
+            get_player_at_position(round, next_active_position)
+            |> Player.set_status(:active)
 
-        {Player.set_status(current_active_player, :busted),
-         update_player_at_position(round, next_active_position, next_active_player),
-         [Event.new(:new_active_player, next_active_player.player_id)]}
-      else
-        {current_active_player, round, []}
-      end
+          {Player.set_status(current_active_player, :busted),
+           update_player_at_position(round, next_active_position, next_active_player),
+           [Event.new(:new_active_player, next_active_player.player_id)]}
+        else
+          {current_active_player, round, []}
+        end
 
-    round = %Round{
-      update_player_at_position(round, current_active_position, current_active_player)
-      | deck: deck
-    }
+      round = %Round{
+        update_player_at_position(round, current_active_position, current_active_player)
+        | deck: deck
+      }
 
-    {round,
-     [
-       %Event{
-         Event.new(:action_hit, player_id)
-         | card: card,
-           score: Hand.max_safe_score(current_active_player.hand)
-       }
-       | events
-     ]}
+      {round,
+       [
+         %Event{
+           Event.new(:action_hit, player_id)
+           | card: card,
+             score: Hand.max_safe_score(current_active_player.hand)
+         }
+         | events
+       ]}
+    end
   end
 
   @spec find_active_position(t()) :: integer()

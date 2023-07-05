@@ -87,11 +87,30 @@ defmodule BlackjackRoundTest do
 
     assert %Event{target: "p1", score: 5} = Enum.find(events, &(&1.type === :action_pass))
     assert %Event{target: "p2"} = Enum.find(events, &(&1.type === :new_active_player))
+    assert nil === Enum.find(events, &(&1.type === :invalid_action))
 
     assert %Round{
              players: [
                %Player{status: :passed},
                %Player{status: :active}
+             ]
+           } = round
+  end
+
+  test "action_pass - non-active player taking invalid action is ignored" do
+    player_ids = ["p1", "p2"]
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    {round, events} = Round.action_pass(round, "p2")
+
+    assert nil === Enum.find(events, &(&1.type === :action_pass))
+    assert nil === Enum.find(events, &(&1.type === :new_active_player))
+    assert %Event{target: "p2"} = Enum.find(events, &(&1.type === :invalid_action))
+
+    assert %Round{
+             players: [
+               %Player{status: :active},
+               %Player{status: :waiting}
              ]
            } = round
   end
@@ -105,6 +124,7 @@ defmodule BlackjackRoundTest do
 
     assert %Event{target: "p2", score: 9} = Enum.find(events, &(&1.type === :action_pass))
     assert %Event{target: "p3"} = Enum.find(events, &(&1.type === :new_active_player))
+    assert nil === Enum.find(events, &(&1.type === :invalid_action))
 
     assert %Round{
              players: [
@@ -125,6 +145,7 @@ defmodule BlackjackRoundTest do
              Enum.find(events, &(&1.type === :action_hit))
 
     assert nil === Enum.find(events, &(&1.type === :new_active_player))
+    assert nil === Enum.find(events, &(&1.type === :invalid_action))
 
     assert %Round{
              players: [
@@ -148,6 +169,7 @@ defmodule BlackjackRoundTest do
              Enum.find(events, &(&1.type === :action_hit))
 
     assert %Event{target: "p2"} = Enum.find(events, &(&1.type === :new_active_player))
+    assert nil === Enum.find(events, &(&1.type === :invalid_action))
 
     assert %Round{
              players: [
@@ -175,6 +197,8 @@ defmodule BlackjackRoundTest do
     assert %Event{target: "p2", card: %Card{suit: :club, value: 8}, score: 17} =
              Enum.find(events, &(&1.type === :action_hit))
 
+    assert nil === Enum.find(events, &(&1.type === :invalid_action))
+
     assert %Round{
              players: [
                %Player{
@@ -185,6 +209,29 @@ defmodule BlackjackRoundTest do
                  hand: [%Card{suit: :club, value: 8}, %Card{value: 5}, %Card{value: 4}]
                }
              ]
+           } = round
+  end
+
+  test "action_hit - non-active player taking out of order action is ignored" do
+    player_ids = ["p1", "p2"]
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    deck = round.deck
+
+    {round, events} = Round.action_hit(round, "p2")
+
+    assert nil === Enum.find(events, &(&1.type === :action_hit))
+    assert nil === Enum.find(events, &(&1.type === :new_active_player))
+    assert %Event{target: "p2"} = Enum.find(events, &(&1.type === :invalid_action))
+
+    assert %Round{
+             players: [
+               %Player{
+                 status: :active,
+                 hand: [%Card{value: 3}, %Card{value: 2}]
+               },
+               %Player{status: :waiting}
+             ],
+             deck: ^deck
            } = round
   end
 end

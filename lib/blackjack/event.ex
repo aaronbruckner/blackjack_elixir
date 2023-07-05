@@ -7,7 +7,7 @@ defmodule Blackjack.Event do
   alias Blackjack.Event
   alias Blackjack.Card
 
-  @type event_type :: :action_pass | :action_hit | :new_active_player
+  @type event_type :: :action_pass | :action_hit | :new_active_player | :invalid_action
 
   @type t() :: %__MODULE__{
           type: event_type(),
