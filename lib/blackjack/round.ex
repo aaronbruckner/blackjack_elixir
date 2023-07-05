@@ -88,6 +88,31 @@ defmodule Blackjack.Round do
      ]}
   end
 
+  @spec action_hit(t(), Player.player_id()) :: {t(), list(Event.t())}
+  def action_hit(round, player_id) do
+    # TODO: Handle edge case where provided player isn't active player
+    {active_index, _active_player} = find_player_and_index(round, player_id)
+
+    {card, deck} = Deck.pull_top_card(round.deck)
+    {round, active_player} = pass_card_to_position(round, active_index, card)
+
+    round = if active_player.status === :busted do
+      update_player_status_at_position(round, active_index + 1, :active)
+    else
+      round
+    end
+
+
+    {%Round{round | deck: deck},
+     [
+       %Event{
+         Event.new(:action_hit, player_id)
+         | card: card,
+           score: Hand.max_safe_score(active_player.hand)
+       }
+     ]}
+  end
+
   @spec find_player_and_index(t(), Player.player_id()) :: {integer(), Player.t()}
   defp find_player_and_index(round, player_id) do
     index = Enum.find_index(round.players, fn p -> p.player_id === player_id end)
@@ -102,5 +127,20 @@ defmodule Blackjack.Round do
       round
       | players: List.replace_at(round.players, index, Player.set_status(player, status))
     }
+  end
+
+  @spec pass_card_to_position(t(), integer(), Card.t()) :: {t(), Player.t()}
+  defp pass_card_to_position(round, index, card) do
+    player =
+      Enum.fetch!(round.players, index)
+      |> Player.give_card(card)
+
+    player = if Hand.is_bust(player.hand) do
+      Player.set_status(player, :busted)
+    else
+      player
+    end
+
+    {%Round{round | players: List.replace_at(round.players, index, player)}, player}
   end
 end

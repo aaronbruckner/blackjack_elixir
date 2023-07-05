@@ -112,4 +112,65 @@ defmodule BlackjackRoundTest do
              ]
            } = round
   end
+
+  test "action_hit - provides player a card, not bust" do
+    player_ids = ["p1", "p2"]
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    {round, events} = Round.action_hit(round, "p1")
+
+    assert %Event{target: "p1", card: %Card{suit: :club, value: 8}, score: 13} =
+             Enum.find(events, &(&1.type === :action_hit))
+
+    assert %Round{
+             players: [
+               %Player{
+                 status: :active,
+                 hand: [%Card{suit: :club, value: 8}, %Card{value: 3}, %Card{value: 2}]
+               },
+               %Player{status: :waiting}
+             ]
+           } = round
+  end
+
+  test "action_hit - returns multiple cards, player goes bust" do
+    player_ids = ["p1", "p2"]
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    {round, _events} = Round.action_hit(round, "p1")
+    {round, events} = Round.action_hit(round, "p1")
+
+    assert %Event{target: "p1", card: %Card{suit: :club, value: 9}, score: 22} =
+             Enum.find(events, &(&1.type === :action_hit))
+
+    assert %Round{
+             players: [
+               %Player{
+                 status: :busted,
+                 hand: [%Card{suit: :club, value: 9}, %Card{value: 8}, %Card{value: 3}, %Card{value: 2}]
+               },
+               %Player{status: :active}
+             ]
+           } = round
+  end
+
+  test "action_hit - second player can take a hit" do
+    player_ids = ["p1", "p2"]
+    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    {round, _events} = Round.action_pass(round, "p1")
+    {round, events} = Round.action_hit(round, "p2")
+
+    assert %Event{target: "p2", card: %Card{suit: :club, value: 8}, score: 17} =
+             Enum.find(events, &(&1.type === :action_hit))
+
+    assert %Round{
+             players: [
+               %Player{
+                 status: :passed
+               },
+               %Player{status: :active, hand: [%Card{suit: :club, value: 8}, %Card{value: 5}, %Card{value: 4}]}
+             ]
+           } = round
+  end
 end
