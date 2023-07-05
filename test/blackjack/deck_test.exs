@@ -20,7 +20,7 @@ defmodule BlackjackDeckTest do
 
     assert {^card1, deck} = Deck.pull_top_card(deck)
     assert {^card2, deck} = Deck.pull_top_card(deck)
-    assert {^card3, deck} = Deck.pull_top_card(deck)
+    assert {^card3, _deck} = Deck.pull_top_card(deck)
   end
 
   test "pull_top_card - returns 52 cards" do
