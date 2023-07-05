@@ -15,7 +15,7 @@ defmodule Blackjack.Round do
 
   @type t() :: %__MODULE__{
           players: list(Player.t()),
-          dealer_hand: Deck.t(),
+          dealer_hand: Hand.t(),
           deck: Deck.t(),
           total_players: integer()
         }
@@ -57,7 +57,10 @@ defmodule Blackjack.Round do
 
     %Round{
       players: players,
-      dealer_hand: [dealerCard2, %Card{dealerCard1 | face_down: true}],
+      dealer_hand:
+        Hand.new()
+        |> Hand.add_card(%Card{dealerCard1 | face_down: true})
+        |> Hand.add_card(dealerCard2),
       deck: deck,
       total_players: length(players)
     }
@@ -70,7 +73,6 @@ defmodule Blackjack.Round do
   """
   @spec action_pass(t(), Player.player_id()) :: {t(), list(Event.t())}
   def action_pass(round, player_id) do
-    # TODO: Handle edge case where provided player isn't active player
     current_active_position = find_active_position(round)
 
     current_active_player =
@@ -80,16 +82,23 @@ defmodule Blackjack.Round do
     if current_active_player.player_id !== player_id do
       {round, [Event.new(:invalid_action, player_id)]}
     else
+      round = update_player_at_position(round, current_active_position, current_active_player)
+
       next_active_position = current_active_position + 1
+      next_active_player = get_player_at_position(round, next_active_position)
 
-      next_active_player =
-        get_player_at_position(round, next_active_position)
-        |> Player.set_status(:active)
-
-      round =
-        round
-        |> update_player_at_position(current_active_position, current_active_player)
-        |> update_player_at_position(next_active_position, next_active_player)
+      {round, events} =
+        if next_active_player !== nil do
+          # Move active to next player.
+          {update_player_at_position(
+             round,
+             next_active_position,
+             Player.set_status(next_active_player, :active)
+           ), [Event.new(:new_active_player, next_active_player.player_id)]}
+        else
+          # All players have been resolved, dealers turn.
+          resolve_dealer_actions(round)
+        end
 
       {round,
        [
@@ -97,15 +106,14 @@ defmodule Blackjack.Round do
            type: :action_pass,
            target: player_id,
            score: Hand.max_safe_score(current_active_player.hand)
-         },
-         Event.new(:new_active_player, next_active_player.player_id)
+         }
+         | events
        ]}
     end
   end
 
   @spec action_hit(t(), Player.player_id()) :: {t(), list(Event.t())}
   def action_hit(round, player_id) do
-    # TODO: Handle edge case where provided player isn't active player
     {card, deck} = Deck.pull_top_card(round.deck)
 
     current_active_position = find_active_position(round)
@@ -149,12 +157,36 @@ defmodule Blackjack.Round do
     end
   end
 
+  @spec resolve_dealer_actions(t()) :: {t(), list(Event.t())}
+  defp resolve_dealer_actions(round) do
+    dealer_score = Hand.max_safe_score(round.dealer_hand)
+
+    results =
+      Enum.map(round.players, fn p ->
+        player_score = Hand.max_safe_score(p.hand)
+
+        player_result =
+          cond do
+            player_score > dealer_score -> :win
+            player_score < dealer_score -> :loss
+            player_score === dealer_score -> :tie
+          end
+
+        %{player_id: p.player_id, result: player_result, score: player_score}
+      end)
+
+    {round,
+     [
+       %Event{Event.new(:round_complete) | round_results: results}
+     ]}
+  end
+
   @spec find_active_position(t()) :: integer()
   defp find_active_position(round) do
     Enum.find_index(round.players, fn p -> p.status === :active end)
   end
 
-  @spec get_player_at_position(t(), integer()) :: Player.t()
+  @spec get_player_at_position(t(), integer()) :: Player.t() | nil
   defp get_player_at_position(round, index) do
     Enum.at(round.players, index)
   end

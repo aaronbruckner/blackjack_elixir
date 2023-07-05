@@ -234,4 +234,69 @@ defmodule BlackjackRoundTest do
              deck: ^deck
            } = round
   end
+
+  test "action_pass last player - dealer wins, no cards to draw" do
+    deck =
+      Deck.new([
+        Card.new(:club, 10),
+        Card.new(:club, 2),
+        Card.new(:heart, 10),
+        Card.new(:heart, 7),
+        Card.new(:heart, :king)
+      ])
+
+    player_ids = ["p1"]
+    round = Round.start_new_round(player_ids, deck: deck)
+
+    {round, events} = Round.action_pass(round, "p1")
+
+    assert %Event{round_results: [%{player_id: "p1", result: :loss, score: 12}]} =
+             Enum.find(events, &(&1.type === :round_complete))
+
+    assert %Round{
+             players: [
+               %Player{status: :passed}
+             ],
+             dealer_hand: [%Card{value: 7, suit: :heart}, %Card{value: 10, suit: :heart}]
+           } = round
+  end
+
+  test "action_pass last player - mix if wins, losses, and ties, no cards to draw" do
+    deck =
+      Deck.new([
+        Card.new(:club, 10),
+        Card.new(:club, :ace),
+        Card.new(:spade, 10),
+        Card.new(:spade, 7),
+        Card.new(:diamond, 10),
+        Card.new(:diamond, 6),
+        Card.new(:heart, 10),
+        Card.new(:heart, 7),
+        Card.new(:heart, :king)
+      ])
+
+    player_ids = ["p1", "p2", "p3"]
+    round = Round.start_new_round(player_ids, deck: deck)
+
+    {round, _events} = Round.action_pass(round, "p1")
+    {round, _events} = Round.action_pass(round, "p2")
+    {round, events} = Round.action_pass(round, "p3")
+
+    assert %Event{
+             round_results: [
+               %{player_id: "p1", result: :win, score: 21},
+               %{player_id: "p2", result: :tie, score: 17},
+               %{player_id: "p3", result: :loss, score: 16}
+             ]
+           } = Enum.find(events, &(&1.type === :round_complete))
+
+    assert %Round{
+             players: [
+               %Player{status: :passed},
+               %Player{status: :passed},
+               %Player{status: :passed}
+             ],
+             dealer_hand: [%Card{value: 7, suit: :heart}, %Card{value: 10, suit: :heart}]
+           } = round
+  end
 end
