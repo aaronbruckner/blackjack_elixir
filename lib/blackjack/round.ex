@@ -110,7 +110,7 @@ defmodule Blackjack.Round do
       get_player_at_position(round, current_active_position)
       |> Player.give_card(card)
 
-    {current_active_player, round} =
+    {current_active_player, round, events} =
       if Hand.is_bust(current_active_player.hand) do
         next_active_position = current_active_position + 1
 
@@ -119,9 +119,10 @@ defmodule Blackjack.Round do
           |> Player.set_status(:active)
 
         {Player.set_status(current_active_player, :busted),
-         update_player_at_position(round, next_active_position, next_active_player)}
+         update_player_at_position(round, next_active_position, next_active_player),
+         [Event.new(:new_active_player, next_active_player.player_id)]}
       else
-        {current_active_player, round}
+        {current_active_player, round, []}
       end
 
     round = %Round{
@@ -136,6 +137,7 @@ defmodule Blackjack.Round do
          | card: card,
            score: Hand.max_safe_score(current_active_player.hand)
        }
+       | events
      ]}
   end
 
