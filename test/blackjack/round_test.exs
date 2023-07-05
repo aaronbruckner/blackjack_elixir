@@ -86,6 +86,7 @@ defmodule BlackjackRoundTest do
     {round, events} = Round.action_pass(round, "p1")
 
     assert %Event{target: "p1", score: 5} = Enum.find(events, &(&1.type === :action_pass))
+    assert %Event{target: "p2"} = Enum.find(events, &(&1.type === :new_active_player))
 
     assert %Round{
              players: [
@@ -147,7 +148,12 @@ defmodule BlackjackRoundTest do
              players: [
                %Player{
                  status: :busted,
-                 hand: [%Card{suit: :club, value: 9}, %Card{value: 8}, %Card{value: 3}, %Card{value: 2}]
+                 hand: [
+                   %Card{suit: :club, value: 9},
+                   %Card{value: 8},
+                   %Card{value: 3},
+                   %Card{value: 2}
+                 ]
                },
                %Player{status: :active}
              ]
@@ -169,7 +175,10 @@ defmodule BlackjackRoundTest do
                %Player{
                  status: :passed
                },
-               %Player{status: :active, hand: [%Card{suit: :club, value: 8}, %Card{value: 5}, %Card{value: 4}]}
+               %Player{
+                 status: :active,
+                 hand: [%Card{suit: :club, value: 8}, %Card{value: 5}, %Card{value: 4}]
+               }
              ]
            } = round
   end
