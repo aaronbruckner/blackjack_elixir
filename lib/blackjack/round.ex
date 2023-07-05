@@ -71,85 +71,86 @@ defmodule Blackjack.Round do
   @spec action_pass(t(), Player.player_id()) :: {t(), list(Event.t())}
   def action_pass(round, player_id) do
     # TODO: Handle edge case where provided player isn't active player
-    {active_index, active_player} = find_player_and_index(round, player_id)
+    current_active_position = find_active_position(round)
+
+    current_active_player =
+      get_player_at_position(round, current_active_position)
+      |> Player.set_status(:passed)
+
+    next_active_position = current_active_position + 1
+
+    next_active_player =
+      get_player_at_position(round, next_active_position)
+      |> Player.set_status(:active)
 
     round =
       round
-      |> update_player_status_at_position(active_index, :passed)
-      |> update_player_status_at_position(active_index + 1, :active)
-
-    new_active_player = find_active_player(round)
+      |> update_player_at_position(current_active_position, current_active_player)
+      |> update_player_at_position(next_active_position, next_active_player)
 
     {round,
      [
        %Event{
          type: :action_pass,
          target: player_id,
-         score: Hand.max_safe_score(active_player.hand)
+         score: Hand.max_safe_score(current_active_player.hand)
        },
-       Event.new(:new_active_player, new_active_player.player_id)
+       Event.new(:new_active_player, next_active_player.player_id)
      ]}
   end
 
   @spec action_hit(t(), Player.player_id()) :: {t(), list(Event.t())}
   def action_hit(round, player_id) do
     # TODO: Handle edge case where provided player isn't active player
-    {active_index, _active_player} = find_player_and_index(round, player_id)
-
     {card, deck} = Deck.pull_top_card(round.deck)
-    {round, active_player} = pass_card_to_position(round, active_index, card)
 
-    round =
-      if active_player.status === :busted do
-        update_player_status_at_position(round, active_index + 1, :active)
+    current_active_position = find_active_position(round)
+
+    current_active_player =
+      get_player_at_position(round, current_active_position)
+      |> Player.give_card(card)
+
+    {current_active_player, round} =
+      if Hand.is_bust(current_active_player.hand) do
+        next_active_position = current_active_position + 1
+
+        next_active_player =
+          get_player_at_position(round, next_active_position)
+          |> Player.set_status(:active)
+
+        {Player.set_status(current_active_player, :busted),
+         update_player_at_position(round, next_active_position, next_active_player)}
       else
-        round
+        {current_active_player, round}
       end
 
-    {%Round{round | deck: deck},
+    round = %Round{
+      update_player_at_position(round, current_active_position, current_active_player)
+      | deck: deck
+    }
+
+    {round,
      [
        %Event{
          Event.new(:action_hit, player_id)
          | card: card,
-           score: Hand.max_safe_score(active_player.hand)
+           score: Hand.max_safe_score(current_active_player.hand)
        }
      ]}
   end
 
-  @spec find_active_player(t()) :: Player.t()
-  defp find_active_player(round) do
-    Enum.find(round.players, fn p -> p.status === :active end)
+  @spec find_active_position(t()) :: integer()
+  defp find_active_position(round) do
+    Enum.find_index(round.players, fn p -> p.status === :active end)
   end
 
-  @spec find_player_and_index(t(), Player.player_id()) :: {integer(), Player.t()}
-  defp find_player_and_index(round, player_id) do
-    index = Enum.find_index(round.players, fn p -> p.player_id === player_id end)
-    {index, Enum.at(round.players, index)}
+  @spec get_player_at_position(t(), integer()) :: Player.t()
+  defp get_player_at_position(round, index) do
+    Enum.at(round.players, index)
   end
 
-  @spec update_player_status_at_position(t(), integer(), Player.status()) :: t()
-  defp update_player_status_at_position(round, index, status) do
-    player = Enum.at(round.players, index)
-
-    %Round{
-      round
-      | players: List.replace_at(round.players, index, Player.set_status(player, status))
-    }
-  end
-
-  @spec pass_card_to_position(t(), integer(), Card.t()) :: {t(), Player.t()}
-  defp pass_card_to_position(round, index, card) do
-    player =
-      Enum.fetch!(round.players, index)
-      |> Player.give_card(card)
-
-    player =
-      if Hand.is_bust(player.hand) do
-        Player.set_status(player, :busted)
-      else
-        player
-      end
-
-    {%Round{round | players: List.replace_at(round.players, index, player)}, player}
+  @spec update_player_at_position(t(), integer(), Player.t()) :: t()
+  defp update_player_at_position(round, index, player) do
+    %Round{round | players: List.replace_at(round.players, index, player)}
   end
 end
