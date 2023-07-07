@@ -6,6 +6,7 @@ defmodule Blackjack.Event do
   """
   alias Blackjack.Event
   alias Blackjack.Card
+  alias Blackjack.Hand
 
   @type event_type ::
           :action_pass | :action_hit | :new_active_player | :invalid_action | :round_complete
@@ -17,11 +18,12 @@ defmodule Blackjack.Event do
           target: target(),
           score: integer() | nil,
           card: Card.t() | nil,
-          round_results: list(player_result()) | nil
+          round_results: list(player_result()) | nil,
+          dealer_hand: Hand.t() | nil
         }
 
   @enforce_keys [:type]
-  defstruct [:type, :target, :score, :card, :round_results]
+  defstruct [:type, :target, :score, :card, :round_results, :dealer_hand]
 
   @spec new(event_type(), target()) :: t()
   def new(type, target \\ nil) do

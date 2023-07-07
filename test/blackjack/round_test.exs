@@ -250,8 +250,10 @@ defmodule BlackjackRoundTest do
 
     {round, events} = Round.action_pass(round, "p1")
 
-    assert %Event{round_results: [%{player_id: "p1", result: :loss, score: 12}]} =
-             Enum.find(events, &(&1.type === :round_complete))
+    assert %Event{
+             round_results: [%{player_id: "p1", result: :loss, score: 12}],
+             dealer_hand: [%Card{value: 7, suit: :heart}, %Card{value: 10, suit: :heart}]
+           } = Enum.find(events, &(&1.type === :round_complete))
 
     assert %Round{
              players: [
@@ -287,7 +289,8 @@ defmodule BlackjackRoundTest do
                %{player_id: "p1", result: :win, score: 21},
                %{player_id: "p2", result: :tie, score: 17},
                %{player_id: "p3", result: :loss, score: 16}
-             ]
+             ],
+             dealer_hand: [%Card{value: 7, suit: :heart}, %Card{value: 10, suit: :heart}]
            } = Enum.find(events, &(&1.type === :round_complete))
 
     assert %Round{
@@ -297,6 +300,47 @@ defmodule BlackjackRoundTest do
                %Player{status: :passed}
              ],
              dealer_hand: [%Card{value: 7, suit: :heart}, %Card{value: 10, suit: :heart}]
+           } = round
+  end
+
+  test "action_pass last player - dealer must draw cards" do
+    deck =
+      Deck.new([
+        Card.new(:club, 10),
+        Card.new(:club, 2),
+        Card.new(:heart, 8),
+        Card.new(:heart, 2),
+        Card.new(:heart, 6),
+        Card.new(:heart, :ace),
+        Card.new(:heart, :king)
+      ])
+
+    player_ids = ["p1"]
+    round = Round.start_new_round(player_ids, deck: deck)
+
+    {round, events} = Round.action_pass(round, "p1")
+
+    assert %Event{
+             round_results: [%{player_id: "p1", result: :loss, score: 12}],
+             dealer_hand: [
+               %Card{value: :ace, suit: :heart},
+               %Card{value: 6, suit: :heart},
+               %Card{value: 2, suit: :heart},
+               %Card{value: 8, suit: :heart}
+             ]
+           } = Enum.find(events, &(&1.type === :round_complete))
+
+    assert %Round{
+             players: [
+               %Player{status: :passed}
+             ],
+             dealer_hand: [
+               %Card{value: :ace, suit: :heart},
+               %Card{value: 6, suit: :heart},
+               %Card{value: 2, suit: :heart},
+               %Card{value: 8, suit: :heart}
+             ],
+             deck: [%Card{value: :king, suit: :heart}]
            } = round
   end
 end

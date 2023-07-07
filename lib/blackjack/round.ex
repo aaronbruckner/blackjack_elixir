@@ -23,6 +23,8 @@ defmodule Blackjack.Round do
   @enforce_keys [:players, :dealer_hand, :deck, :total_players]
   defstruct [:players, :dealer_hand, :deck, :total_players]
 
+  @dealer_score_limit 17
+
   @doc """
   Starts a new round of blackjack with the list of provided players.
   Players are automatically delt 2 cards from the deck and the dealer is
@@ -159,7 +161,9 @@ defmodule Blackjack.Round do
 
   @spec resolve_dealer_actions(t()) :: {t(), list(Event.t())}
   defp resolve_dealer_actions(round) do
-    dealer_score = Hand.max_safe_score(round.dealer_hand)
+    # Allows the dealer to resolve their draw steps and determine winners, losers, and ties.
+    {deck, dealer_hand} = draw_dealer_cards(round.deck, round.dealer_hand)
+    dealer_score = Hand.max_safe_score(dealer_hand)
 
     results =
       Enum.map(round.players, fn p ->
@@ -175,10 +179,20 @@ defmodule Blackjack.Round do
         %{player_id: p.player_id, result: player_result, score: player_score}
       end)
 
-    {round,
+    {%Round{round | dealer_hand: dealer_hand, deck: deck},
      [
-       %Event{Event.new(:round_complete) | round_results: results}
+       %Event{Event.new(:round_complete) | round_results: results, dealer_hand: dealer_hand}
      ]}
+  end
+
+  @spec draw_dealer_cards(Deck.t(), Hand.t()) :: {Deck.t(), Hand.t()}
+  defp draw_dealer_cards(deck, dealer_hand) do
+    if Hand.max_safe_score(dealer_hand) < @dealer_score_limit do
+      {card, deck} = Deck.pull_top_card(deck)
+      draw_dealer_cards(deck, Hand.add_card(dealer_hand, card))
+    else
+      {deck, dealer_hand}
+    end
   end
 
   @spec find_active_position(t()) :: integer()
