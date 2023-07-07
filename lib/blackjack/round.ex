@@ -127,25 +127,35 @@ defmodule Blackjack.Round do
     if current_active_player.player_id !== player_id do
       {round, [Event.new(:invalid_action, player_id)]}
     else
+      round = %Round{round | deck: deck}
+
+      current_active_player =
+        Player.set_status(
+          current_active_player,
+          if(Hand.is_bust(current_active_player.hand), do: :busted, else: :active)
+        )
+
+      round = update_player_at_position(round, current_active_position, current_active_player)
+
       {current_active_player, round, events} =
         if Hand.is_bust(current_active_player.hand) do
+          current_active_player = Player.set_status(current_active_player, :busted)
           next_active_position = current_active_position + 1
+          next_active_player = get_player_at_position(round, next_active_position)
 
-          next_active_player =
-            get_player_at_position(round, next_active_position)
-            |> Player.set_status(:active)
+          if next_active_player !== nil do
+            next_active_player = Player.set_status(next_active_player, :active)
 
-          {Player.set_status(current_active_player, :busted),
-           update_player_at_position(round, next_active_position, next_active_player),
-           [Event.new(:new_active_player, next_active_player.player_id)]}
+            {current_active_player,
+             update_player_at_position(round, next_active_position, next_active_player),
+             [Event.new(:new_active_player, next_active_player.player_id)]}
+          else
+            {round, events} = resolve_dealer_actions(round)
+            {current_active_player, round, events}
+          end
         else
           {current_active_player, round, []}
         end
-
-      round = %Round{
-        update_player_at_position(round, current_active_position, current_active_player)
-        | deck: deck
-      }
 
       {round,
        [
@@ -171,6 +181,7 @@ defmodule Blackjack.Round do
 
         player_result =
           cond do
+            Hand.is_bust(p.hand) -> :loss
             player_score > dealer_score -> :win
             player_score < dealer_score -> :loss
             player_score === dealer_score -> :tie
