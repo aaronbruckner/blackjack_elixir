@@ -77,29 +77,26 @@ defmodule Blackjack.Round do
   def action_pass(round, player_id) do
     current_active_position = find_active_position(round)
 
-    current_active_player =
-      get_player_at_position(round, current_active_position)
-      |> Player.set_status(:passed)
-
-    if current_active_player.player_id !== player_id do
+    if get_player_id_at_position(round, current_active_position) !== player_id do
       {round, [Event.new(:invalid_action, player_id)]}
     else
-      round = update_player_at_position(round, current_active_position, current_active_player)
+      round = set_player_status_at_position(round, current_active_position, :passed)
 
       next_active_position = current_active_position + 1
-      next_active_player = get_player_at_position(round, next_active_position)
+      is_last_player = length(round.players) === next_active_position
 
       {round, events} =
-        if next_active_player !== nil do
-          # Move active to next player.
-          {update_player_at_position(
-             round,
-             next_active_position,
-             Player.set_status(next_active_player, :active)
-           ), [Event.new(:new_active_player, next_active_player.player_id)]}
-        else
+        if is_last_player do
           # All players have been resolved, dealers turn.
           resolve_dealer_actions(round)
+        else
+          # Move active to next player.
+          {set_player_status_at_position(
+             round,
+             next_active_position,
+             :active
+           ),
+           [Event.new(:new_active_player, get_player_id_at_position(round, next_active_position))]}
         end
 
       {round,
@@ -107,7 +104,7 @@ defmodule Blackjack.Round do
          %Event{
            type: :action_pass,
            target: player_id,
-           score: Hand.max_safe_score(current_active_player.hand)
+           score: get_player_score_at_position(round, current_active_position)
          }
          | events
        ]}
@@ -116,45 +113,41 @@ defmodule Blackjack.Round do
 
   @spec action_hit(t(), Player.player_id()) :: {t(), list(Event.t())}
   def action_hit(round, player_id) do
-    {card, deck} = Deck.pull_top_card(round.deck)
-
     current_active_position = find_active_position(round)
 
-    current_active_player =
-      get_player_at_position(round, current_active_position)
-      |> Player.give_card(card)
-
-    if current_active_player.player_id !== player_id do
+    if get_player_id_at_position(round, current_active_position) !== player_id do
       {round, [Event.new(:invalid_action, player_id)]}
     else
-      round = %Round{round | deck: deck}
+      {round, card} = pull_card_from_deck(round)
+      round = pass_card_to_position(round, current_active_position, card)
+      has_busted = is_player_bust_at_position?(round, current_active_position)
 
-      current_active_player =
-        Player.set_status(
-          current_active_player,
-          if(Hand.is_bust(current_active_player.hand), do: :busted, else: :active)
-        )
-
-      round = update_player_at_position(round, current_active_position, current_active_player)
-
-      {current_active_player, round, events} =
-        if Hand.is_bust(current_active_player.hand) do
-          current_active_player = Player.set_status(current_active_player, :busted)
-          next_active_position = current_active_position + 1
-          next_active_player = get_player_at_position(round, next_active_position)
-
-          if next_active_player !== nil do
-            next_active_player = Player.set_status(next_active_player, :active)
-
-            {current_active_player,
-             update_player_at_position(round, next_active_position, next_active_player),
-             [Event.new(:new_active_player, next_active_player.player_id)]}
-          else
-            {round, events} = resolve_dealer_actions(round)
-            {current_active_player, round, events}
-          end
+      round =
+        if has_busted do
+          set_player_status_at_position(round, current_active_position, :busted)
         else
-          {current_active_player, round, []}
+          round
+        end
+
+      next_active_position = current_active_position + 1
+      is_last_player = length(round.players) === next_active_position
+
+      {round, events} =
+        cond do
+          has_busted and is_last_player ->
+            resolve_dealer_actions(round)
+
+          has_busted ->
+            {set_player_status_at_position(round, next_active_position, :active),
+             [
+               Event.new(
+                 :new_active_player,
+                 get_player_id_at_position(round, next_active_position)
+               )
+             ]}
+
+          true ->
+            {round, []}
         end
 
       {round,
@@ -162,11 +155,50 @@ defmodule Blackjack.Round do
          %Event{
            Event.new(:action_hit, player_id)
            | card: card,
-             score: Hand.max_safe_score(current_active_player.hand)
+             score: get_player_score_at_position(round, current_active_position)
          }
          | events
        ]}
     end
+  end
+
+  @spec get_player_score_at_position(t(), integer()) :: integer()
+  defp get_player_score_at_position(round, position) do
+    Hand.max_safe_score(get_player_at_position(round, position).hand)
+  end
+
+  @spec is_player_bust_at_position?(t(), integer()) :: boolean()
+  defp is_player_bust_at_position?(round, position) do
+    Hand.is_bust(get_player_at_position(round, position).hand)
+  end
+
+  @spec get_player_id_at_position(t(), integer()) :: Player.player_id()
+  defp get_player_id_at_position(round, position) do
+    get_player_at_position(round, position).player_id
+  end
+
+  @spec set_player_status_at_position(t(), integer(), Player.status()) :: t()
+  defp set_player_status_at_position(round, position, status) do
+    player =
+      get_player_at_position(round, position)
+      |> Player.set_status(status)
+
+    update_player_at_position(round, position, player)
+  end
+
+  @spec pass_card_to_position(t(), integer(), Card.t()) :: t()
+  defp pass_card_to_position(round, position, card) do
+    player =
+      get_player_at_position(round, position)
+      |> Player.give_card(card)
+
+    update_player_at_position(round, position, player)
+  end
+
+  @spec pull_card_from_deck(t()) :: {t(), Card.t()}
+  defp pull_card_from_deck(round) do
+    {card, deck} = Deck.pull_top_card(round.deck)
+    {%Round{round | deck: deck}, card}
   end
 
   @spec resolve_dealer_actions(t()) :: {t(), list(Event.t())}
