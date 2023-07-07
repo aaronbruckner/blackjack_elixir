@@ -344,6 +344,41 @@ defmodule BlackjackRoundTest do
            } = round
   end
 
+  test "action_pass last player - ace prevents drawing additional cards" do
+    deck =
+      Deck.new([
+        Card.new(:club, 10),
+        Card.new(:club, 2),
+        Card.new(:heart, 6),
+        Card.new(:heart, :ace),
+        Card.new(:heart, :king)
+      ])
+
+    player_ids = ["p1"]
+    round = Round.start_new_round(player_ids, deck: deck)
+
+    {round, events} = Round.action_pass(round, "p1")
+
+    assert %Event{
+             round_results: [%{player_id: "p1", result: :loss, score: 12}],
+             dealer_hand: [
+               %Card{value: :ace, suit: :heart},
+               %Card{value: 6, suit: :heart}
+             ]
+           } = Enum.find(events, &(&1.type === :round_complete))
+
+    assert %Round{
+             players: [
+               %Player{status: :passed}
+             ],
+             dealer_hand: [
+               %Card{value: :ace, suit: :heart},
+               %Card{value: 6, suit: :heart}
+             ],
+             deck: [%Card{value: :king, suit: :heart}]
+           } = round
+  end
+
   test "action_hit last player - bust players cannot win" do
     deck =
       Deck.new([
