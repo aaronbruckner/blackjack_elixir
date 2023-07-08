@@ -199,6 +199,17 @@ defmodule Blackjack.Round do
     }
   end
 
+  @doc """
+  Returns the ID of the active player. If no player is active, nil is returned.
+  """
+  @spec get_active_player_id(t()) :: Player.player_id() | nil
+  def get_active_player_id(round) do
+    case Enum.find(round.players, &(&1.status === :active)) do
+      nil -> nil
+      p -> p.player_id
+    end
+  end
+
   @spec get_player_score_at_position(t(), integer()) :: integer()
   defp get_player_score_at_position(round, position) do
     Hand.max_safe_score(get_player_at_position(round, position).hand)

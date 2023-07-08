@@ -499,4 +499,24 @@ defmodule BlackjackRoundTest do
              deck: []
            } === Round.make_client_safe(round)
   end
+
+  test "get_active_player_id - returns ID of active player" do
+    player_ids = ["p1", "p2", "p3"]
+
+    {round, _events} = Round.start_new_round(player_ids)
+
+    {round, _events} = Round.action_pass(round, "p1")
+
+    assert Round.get_active_player_id(round) === "p2"
+  end
+
+  test "get_active_player_id - returns nil if no player is active" do
+    player_ids = ["p1"]
+
+    {round, _events} = Round.start_new_round(player_ids)
+
+    {round, _events} = Round.action_pass(round, "p1")
+
+    assert Round.get_active_player_id(round) === nil
+  end
 end
