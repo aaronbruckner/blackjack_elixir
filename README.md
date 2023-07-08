@@ -1,29 +1,15 @@
 # Blackjack Elixir
 My attempt to create a basic blackjack game as I learn Elixir.
 
-# Todo Items
-* Create client infrastructure
-  * terminal client
-  * Phoenix Client?
-* Blackjack table
-  * Allow people to join an active table and parcitipate in the next round?
-  * Allow people to leave the table
-  * Allow people to spectate the table?
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `blackjack_elixir` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:blackjack_elixir, "~> 0.1.0"}
-  ]
-end
+## Run Basic Game Locally
 ```
+iex -S mix
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/blackjack_elixir>.
+> {round, events} = Blackjack.Round.start_new_round(["p1", "p2"])
 
+> {round, events} = Blackjack.Round.action_pass(round, "p1")
+
+> {round, events} = Blackjack.Round.action_hit(round, "p2")
+> {round, events} = Blackjack.Round.action_pass(round, "p2")
+```
+Players must take action in the correct order or their actions will be rejected. Once all players have passed or bust, dealer will resolve their actions and winners/losers are determined. Each action returns the modified round and a series of events which shows what happened within the game.

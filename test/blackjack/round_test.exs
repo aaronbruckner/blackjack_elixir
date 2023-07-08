@@ -58,6 +58,27 @@ defmodule BlackjackRoundTest do
            } = round
   end
 
+  test "start_new_round - generates events for all initial cards delt on start" do
+    player_ids = ["p1", "p2"]
+
+    {_round, events} = Round.start_new_round(player_ids, deck: @ordered_deck)
+
+    assert [
+             %Event{card: %Card{suit: :club, value: 2}, score: 2},
+             %Event{card: %Card{suit: :club, value: 3}, score: 5}
+           ] = Enum.filter(events, &(&1.type === :card_dealt and &1.target === "p1"))
+
+    assert [
+             %Event{card: %Card{suit: :club, value: 4}, score: 4},
+             %Event{card: %Card{suit: :club, value: 5}, score: 9}
+           ] = Enum.filter(events, &(&1.type === :card_dealt and &1.target === "p2"))
+
+    assert [
+             %Event{card: %Card{suit: nil, value: nil}, score: 0},
+             %Event{card: %Card{suit: :club, value: 7}, score: 7}
+           ] = Enum.filter(events, &(&1.type === :card_dealt and &1.target === ":dealer"))
+  end
+
   test "start_new_round - sets correct number of players" do
     player_ids = ["p1", "p2", "p3"]
 

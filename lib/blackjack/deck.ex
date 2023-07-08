@@ -28,12 +28,14 @@ defmodule Blackjack.Deck do
   Pulls the top card from the deck, returning the card and the new deck without the top card.
   If the deck is empty, the returned card will be nil.
   """
-  @spec pull_top_card(t()) :: {%Card{} | nil, t()}
-  def pull_top_card([card | remainingDeck]) do
-    {card, remainingDeck}
+  @spec pull_top_card(t(), boolean()) :: {Card.t() | nil, t()}
+  def pull_top_card(deck, face_down \\ false)
+
+  def pull_top_card([card | remainingDeck], face_down) do
+    {%Card{card | face_down: face_down}, remainingDeck}
   end
 
-  def pull_top_card(deck) do
+  def pull_top_card(deck, _face_down) do
     {nil, deck}
   end
 end

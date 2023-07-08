@@ -9,7 +9,12 @@ defmodule Blackjack.Event do
   alias Blackjack.Hand
 
   @type event_type ::
-          :action_pass | :action_hit | :new_active_player | :invalid_action | :round_complete
+          :action_pass
+          | :action_hit
+          | :new_active_player
+          | :invalid_action
+          | :round_complete
+          | :card_dealt
   @type target :: String.t() | list(String.t()) | nil
   @type player_result :: %{player_id: String.t(), result: :win | :loss | :tie, score: integer()}
 

@@ -24,7 +24,7 @@ defmodule Blackjack.Card do
   @enforce_keys [:suit, :value]
   defstruct [:suit, :value, face_down: false]
 
-  @spec new(suit(), value(), boolean()) :: t()
+  @spec new(suit() | nil, value() | nil, boolean()) :: t()
   def new(suit, value, face_down \\ false),
     do: %Card{suit: suit, value: value, face_down: face_down}
 
@@ -33,10 +33,11 @@ defmodule Blackjack.Card do
   """
   @spec point_value(t()) :: integer()
   def point_value(card) do
-    case card.value do
-      x when is_number(x) -> x
-      :ace -> 1
-      _ -> 10
+    cond do
+      card.face_down -> 0
+      is_number(card.value) -> card.value
+      card.value === :ace -> 1
+      true -> 10
     end
   end
 end

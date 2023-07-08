@@ -24,6 +24,7 @@ defmodule Blackjack.Round do
   defstruct [:players, :dealer_hand, :deck, :total_players]
 
   @dealer_score_limit 17
+  @dealer_id ":dealer"
 
   @doc """
   Starts a new round of blackjack with the list of provided players.
@@ -36,36 +37,62 @@ defmodule Blackjack.Round do
   def start_new_round(player_ids, options \\ []) do
     deck = Keyword.get(options, :deck, Deck.new())
 
-    {deck, players} =
+    {deck, players, events} =
       Enum.reduce(
         player_ids,
-        {deck, []},
-        fn player_id, {deck, players} ->
+        {deck, [], []},
+        fn player_id, {deck, players, events} ->
           {card1, deck} = Deck.pull_top_card(deck)
           {card2, deck} = Deck.pull_top_card(deck)
 
           player =
             Player.new(player_id)
             |> Player.give_card(card1)
-            |> Player.give_card(card2)
             |> Player.set_status(if players === [], do: :active, else: :waiting)
 
-          {deck, players ++ [player]}
+          dealt_event_1 = %Event{
+            Event.new(:card_dealt, player_id)
+            | card: card1,
+              score: Hand.max_safe_score(player.hand)
+          }
+
+          player = Player.give_card(player, card2)
+
+          dealt_event_2 = %Event{
+            Event.new(:card_dealt, player_id)
+            | card: card2,
+              score: Hand.max_safe_score(player.hand)
+          }
+
+          {deck, players ++ [player], events ++ [dealt_event_1, dealt_event_2]}
         end
       )
 
-    {dealerCard1, deck} = Deck.pull_top_card(deck)
+    {dealerCard1, deck} = Deck.pull_top_card(deck, true)
     {dealerCard2, deck} = Deck.pull_top_card(deck)
+
+    dealer_hand =
+      Hand.new()
+      |> Hand.add_card(dealerCard1)
+      |> Hand.add_card(dealerCard2)
+
+    events =
+      events ++
+        [
+          %Event{Event.new(:card_dealt, @dealer_id) | card: Card.new(nil, nil, true), score: 0},
+          %Event{
+            Event.new(:card_dealt, @dealer_id)
+            | card: dealerCard2,
+              score: Hand.max_safe_score(dealer_hand)
+          }
+        ]
 
     {%Round{
        players: players,
-       dealer_hand:
-         Hand.new()
-         |> Hand.add_card(%Card{dealerCard1 | face_down: true})
-         |> Hand.add_card(dealerCard2),
+       dealer_hand: dealer_hand,
        deck: deck,
        total_players: length(players)
-     }, []}
+     }, events}
   end
 
   @doc """
@@ -201,9 +228,14 @@ defmodule Blackjack.Round do
     {%Round{round | deck: deck}, card}
   end
 
+  defp reveal_dealer_cards(round) do
+    %Round{round | dealer_hand: Hand.show_cards(round.dealer_hand)}
+  end
+
   @spec resolve_dealer_actions(t()) :: {t(), list(Event.t())}
   defp resolve_dealer_actions(round) do
     # Allows the dealer to resolve their draw steps and determine winners, losers, and ties.
+    round = reveal_dealer_cards(round)
     {deck, dealer_hand} = draw_dealer_cards(round.deck, round.dealer_hand)
     dealer_score = Hand.max_safe_score(dealer_hand)
     dealer_bust = Hand.is_bust(dealer_hand)

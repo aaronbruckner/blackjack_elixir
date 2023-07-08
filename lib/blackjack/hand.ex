@@ -32,4 +32,12 @@ defmodule Blackjack.Hand do
   """
   @spec add_card(t(), Card.t()) :: t()
   def add_card(hand, card), do: [card | hand]
+
+  @doc """
+  Flips all cards face-up
+  """
+  @spec show_cards(t()) :: t()
+  def show_cards(hand) do
+    Enum.map(hand, fn card -> %Card{card | face_down: false} end)
+  end
 end
