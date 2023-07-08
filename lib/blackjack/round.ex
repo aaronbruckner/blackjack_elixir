@@ -32,7 +32,7 @@ defmodule Blackjack.Round do
 
   If a deck isn't provided, a 52 card shuffled deck will be used.
   """
-  @spec start_new_round(list(Player.player_id()), keyword()) :: t()
+  @spec start_new_round(list(Player.player_id()), keyword()) :: {t(), list(Event.t())}
   def start_new_round(player_ids, options \\ []) do
     deck = Keyword.get(options, :deck, Deck.new())
 
@@ -57,15 +57,15 @@ defmodule Blackjack.Round do
     {dealerCard1, deck} = Deck.pull_top_card(deck)
     {dealerCard2, deck} = Deck.pull_top_card(deck)
 
-    %Round{
-      players: players,
-      dealer_hand:
-        Hand.new()
-        |> Hand.add_card(%Card{dealerCard1 | face_down: true})
-        |> Hand.add_card(dealerCard2),
-      deck: deck,
-      total_players: length(players)
-    }
+    {%Round{
+       players: players,
+       dealer_hand:
+         Hand.new()
+         |> Hand.add_card(%Card{dealerCard1 | face_down: true})
+         |> Hand.add_card(dealerCard2),
+       deck: deck,
+       total_players: length(players)
+     }, []}
   end
 
   @doc """

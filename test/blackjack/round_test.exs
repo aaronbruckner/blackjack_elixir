@@ -22,7 +22,7 @@ defmodule BlackjackRoundTest do
   test "start_new_round - creates players" do
     player_ids = ["p1", "p2", "p3"]
 
-    round = Round.start_new_round(player_ids)
+    {round, _events} = Round.start_new_round(player_ids)
 
     assert %Round{
              players: [
@@ -36,7 +36,7 @@ defmodule BlackjackRoundTest do
   test "start_new_round - deals 2 cards to each player and dealer" do
     player_ids = ["p1", "p2"]
 
-    round = Round.start_new_round(player_ids)
+    {round, _events} = Round.start_new_round(player_ids)
 
     assert %Round{
              players: [%Player{hand: [%Card{}, %Card{}]}, %Player{hand: [%Card{}, %Card{}]}],
@@ -47,7 +47,7 @@ defmodule BlackjackRoundTest do
   test "start_new_round - deals cards from the deck correctly" do
     player_ids = ["p1", "p2"]
 
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     assert %Round{
              players: [
@@ -61,7 +61,7 @@ defmodule BlackjackRoundTest do
   test "start_new_round - sets correct number of players" do
     player_ids = ["p1", "p2", "p3"]
 
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     assert %Round{total_players: 3} = round
   end
@@ -69,7 +69,7 @@ defmodule BlackjackRoundTest do
   test "start_new_round - sets player statuses correctly" do
     player_ids = ["p1", "p2"]
 
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     assert %Round{
              players: [
@@ -81,7 +81,7 @@ defmodule BlackjackRoundTest do
 
   test "action_pass - moves to the next player" do
     player_ids = ["p1", "p2"]
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     {round, events} = Round.action_pass(round, "p1")
 
@@ -99,7 +99,7 @@ defmodule BlackjackRoundTest do
 
   test "action_pass - non-active player taking invalid action is ignored" do
     player_ids = ["p1", "p2"]
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     {round, events} = Round.action_pass(round, "p2")
 
@@ -117,7 +117,7 @@ defmodule BlackjackRoundTest do
 
   test "action_pass - able to pass two players in a row" do
     player_ids = ["p1", "p2", "p3"]
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     {round, _events} = Round.action_pass(round, "p1")
     {round, events} = Round.action_pass(round, "p2")
@@ -137,7 +137,7 @@ defmodule BlackjackRoundTest do
 
   test "action_hit - provides player a card, not bust" do
     player_ids = ["p1", "p2"]
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     {round, events} = Round.action_hit(round, "p1")
 
@@ -160,7 +160,7 @@ defmodule BlackjackRoundTest do
 
   test "action_hit - returns multiple cards, player goes bust" do
     player_ids = ["p1", "p2"]
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     {round, _events} = Round.action_hit(round, "p1")
     {round, events} = Round.action_hit(round, "p1")
@@ -189,7 +189,7 @@ defmodule BlackjackRoundTest do
 
   test "action_hit - second player can take a hit" do
     player_ids = ["p1", "p2"]
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
 
     {round, _events} = Round.action_pass(round, "p1")
     {round, events} = Round.action_hit(round, "p2")
@@ -214,7 +214,7 @@ defmodule BlackjackRoundTest do
 
   test "action_hit - non-active player taking out of order action is ignored" do
     player_ids = ["p1", "p2"]
-    round = Round.start_new_round(player_ids, deck: @ordered_deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
     deck = round.deck
 
     {round, events} = Round.action_hit(round, "p2")
@@ -246,7 +246,7 @@ defmodule BlackjackRoundTest do
       ])
 
     player_ids = ["p1"]
-    round = Round.start_new_round(player_ids, deck: deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: deck)
 
     {round, events} = Round.action_pass(round, "p1")
 
@@ -278,7 +278,7 @@ defmodule BlackjackRoundTest do
       ])
 
     player_ids = ["p1", "p2", "p3"]
-    round = Round.start_new_round(player_ids, deck: deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: deck)
 
     {round, _events} = Round.action_pass(round, "p1")
     {round, _events} = Round.action_pass(round, "p2")
@@ -316,7 +316,7 @@ defmodule BlackjackRoundTest do
       ])
 
     player_ids = ["p1"]
-    round = Round.start_new_round(player_ids, deck: deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: deck)
 
     {round, events} = Round.action_pass(round, "p1")
 
@@ -355,7 +355,7 @@ defmodule BlackjackRoundTest do
       ])
 
     player_ids = ["p1"]
-    round = Round.start_new_round(player_ids, deck: deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: deck)
 
     {round, events} = Round.action_pass(round, "p1")
 
@@ -392,7 +392,7 @@ defmodule BlackjackRoundTest do
       ])
 
     player_ids = ["p1"]
-    round = Round.start_new_round(player_ids, deck: deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: deck)
 
     {round, events} = Round.action_hit(round, "p1")
 
@@ -430,7 +430,7 @@ defmodule BlackjackRoundTest do
       ])
 
     player_ids = ["p1"]
-    round = Round.start_new_round(player_ids, deck: deck)
+    {round, _events} = Round.start_new_round(player_ids, deck: deck)
 
     {round, events} = Round.action_pass(round, "p1")
 
