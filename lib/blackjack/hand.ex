@@ -40,4 +40,12 @@ defmodule Blackjack.Hand do
   def show_cards(hand) do
     Enum.map(hand, fn card -> %Card{card | face_down: false} end)
   end
+
+  @doc """
+  Nulls out any card which is face down so it's safe to share with a client.
+  """
+  @spec hide_face_down_cards(t()) :: t()
+  def hide_face_down_cards(hand) do
+    Enum.map(hand, fn card -> if card.face_down, do: Card.new(nil, nil, true), else: card end)
+  end
 end

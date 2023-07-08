@@ -99,4 +99,21 @@ defmodule BlackjackHandTest do
 
     assert Hand.is_bust(hand) === true
   end
+
+  test "hide_face_down_cards - nils out any card which is face down" do
+    hand =
+      Hand.new()
+      |> Hand.add_card(Card.new(:heart, 2, false))
+      |> Hand.add_card(Card.new(:heart, 3, true))
+      |> Hand.add_card(Card.new(:club, 2, true))
+      |> Hand.add_card(Card.new(:club, :jack, false))
+      |> Hand.hide_face_down_cards()
+
+    assert [
+             %Card{suit: :club, value: :jack, face_down: false},
+             %Card{suit: nil, value: nil, face_down: true},
+             %Card{suit: nil, value: nil, face_down: true},
+             %Card{suit: :heart, value: 2, face_down: false}
+           ] = hand
+  end
 end
