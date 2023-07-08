@@ -206,6 +206,7 @@ defmodule Blackjack.Round do
     # Allows the dealer to resolve their draw steps and determine winners, losers, and ties.
     {deck, dealer_hand} = draw_dealer_cards(round.deck, round.dealer_hand)
     dealer_score = Hand.max_safe_score(dealer_hand)
+    dealer_bust = Hand.is_bust(dealer_hand)
 
     results =
       Enum.map(round.players, fn p ->
@@ -214,7 +215,7 @@ defmodule Blackjack.Round do
         player_result =
           cond do
             Hand.is_bust(p.hand) -> :loss
-            player_score > dealer_score -> :win
+            dealer_bust or player_score > dealer_score -> :win
             player_score < dealer_score -> :loss
             player_score === dealer_score -> :tie
           end

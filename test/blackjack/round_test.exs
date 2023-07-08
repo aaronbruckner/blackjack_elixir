@@ -417,4 +417,42 @@ defmodule BlackjackRoundTest do
              deck: [%Card{value: :ace, suit: :heart}]
            } = round
   end
+
+  test "Dealer goes bust" do
+    deck =
+      Deck.new([
+        Card.new(:club, 10),
+        Card.new(:club, :jack),
+        Card.new(:heart, 10),
+        Card.new(:heart, 6),
+        Card.new(:heart, :king),
+        Card.new(:heart, :ace)
+      ])
+
+    player_ids = ["p1"]
+    round = Round.start_new_round(player_ids, deck: deck)
+
+    {round, events} = Round.action_pass(round, "p1")
+
+    assert %Event{
+             round_results: [%{player_id: "p1", result: :win, score: 20}],
+             dealer_hand: [
+               %Card{value: :king, suit: :heart},
+               %Card{value: 6, suit: :heart},
+               %Card{value: 10, suit: :heart}
+             ]
+           } = Enum.find(events, &(&1.type === :round_complete))
+
+    assert %Round{
+             players: [
+               %Player{status: :passed}
+             ],
+             dealer_hand: [
+               %Card{value: :king, suit: :heart},
+               %Card{value: 6, suit: :heart},
+               %Card{value: 10, suit: :heart}
+             ],
+             deck: [%Card{value: :ace, suit: :heart}]
+           } = round
+  end
 end
