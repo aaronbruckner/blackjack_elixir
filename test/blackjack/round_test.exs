@@ -79,14 +79,6 @@ defmodule BlackjackRoundTest do
            ] = Enum.filter(events, &(&1.type === :card_dealt and &1.target === ":dealer"))
   end
 
-  test "start_new_round - sets correct number of players" do
-    player_ids = ["p1", "p2", "p3"]
-
-    {round, _events} = Round.start_new_round(player_ids, deck: @ordered_deck)
-
-    assert %Round{total_players: 3} = round
-  end
-
   test "start_new_round - sets player statuses correctly" do
     player_ids = ["p1", "p2"]
 
@@ -475,5 +467,36 @@ defmodule BlackjackRoundTest do
              ],
              deck: [%Card{value: :ace, suit: :heart}]
            } = round
+  end
+
+  test "make_client_safe - return santized version of the round" do
+    deck =
+      Deck.new([
+        Card.new(:club, 10),
+        Card.new(:club, :jack),
+        Card.new(:heart, 10),
+        Card.new(:heart, 6),
+        Card.new(:heart, :king),
+        Card.new(:heart, :ace)
+      ])
+
+    player_ids = ["p1"]
+
+    {round, _events} = Round.start_new_round(player_ids, deck: deck)
+
+    assert %Round{
+             players: [
+               %Player{
+                 player_id: "p1",
+                 hand: [%Card{suit: :club, value: :jack}, %Card{suit: :club, value: 10}],
+                 status: :active
+               }
+             ],
+             dealer_hand: [
+               %Card{value: 6, suit: :heart},
+               %Card{value: nil, suit: nil, face_down: true}
+             ],
+             deck: []
+           } === Round.make_client_safe(round)
   end
 end

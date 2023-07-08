@@ -16,12 +16,11 @@ defmodule Blackjack.Round do
   @type t() :: %__MODULE__{
           players: list(Player.t()),
           dealer_hand: Hand.t(),
-          deck: Deck.t(),
-          total_players: integer()
+          deck: Deck.t()
         }
 
-  @enforce_keys [:players, :dealer_hand, :deck, :total_players]
-  defstruct [:players, :dealer_hand, :deck, :total_players]
+  @enforce_keys [:players, :dealer_hand, :deck]
+  defstruct [:players, :dealer_hand, :deck]
 
   @dealer_score_limit 17
   @dealer_id ":dealer"
@@ -90,8 +89,7 @@ defmodule Blackjack.Round do
     {%Round{
        players: players,
        dealer_hand: dealer_hand,
-       deck: deck,
-       total_players: length(players)
+       deck: deck
      }, events}
   end
 
@@ -187,6 +185,18 @@ defmodule Blackjack.Round do
          | events
        ]}
     end
+  end
+
+  @doc """
+  Returns a view of the round which has been sanitized and is safe to show to clients.
+  """
+  @spec make_client_safe(t()) :: t()
+  def make_client_safe(round) do
+    %Round{
+      players: round.players,
+      dealer_hand: Hand.hide_face_down_cards(round.dealer_hand),
+      deck: Deck.new([])
+    }
   end
 
   @spec get_player_score_at_position(t(), integer()) :: integer()
