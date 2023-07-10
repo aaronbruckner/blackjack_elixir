@@ -274,6 +274,8 @@ defmodule BlackjackRoundTest do
              ],
              dealer_hand: [%Card{value: 7, suit: :heart}, %Card{value: 10, suit: :heart}]
            } = round
+
+    assert Round.get_active_player_id(round) === nil
   end
 
   test "action_pass last player - mix if wins, losses, and ties, no cards to draw" do
@@ -429,6 +431,8 @@ defmodule BlackjackRoundTest do
              ],
              deck: [%Card{value: :ace, suit: :heart}]
            } = round
+
+    assert Round.get_active_player_id(round) === nil
   end
 
   test "Dealer goes bust" do
