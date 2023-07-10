@@ -45,6 +45,10 @@ end
 defimpl String.Chars, for: Blackjack.Card do
   @spec to_string(Blackjack.Card.t()) :: String.t()
   def to_string(card) do
-    "#{card.value} of #{card.suit}s"
+    if card.face_down do
+      "<Face Down>"
+    else
+      "#{card.value} of #{card.suit}s"
+    end
   end
 end

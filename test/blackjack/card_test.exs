@@ -18,6 +18,10 @@ defmodule BlackjackCardTest do
     assert "#{Card.new(:spade, :king)}" === "king of spades"
   end
 
+  test "struct - implements to_string for face down cards" do
+    assert "#{Card.new(:spade, :king, true)}" === "<Face Down>"
+  end
+
   test "point_value - returns correct value for numeric cards" do
     Enum.each(2..10, fn value ->
       assert Card.point_value(Card.new(:heart, value)) === value
