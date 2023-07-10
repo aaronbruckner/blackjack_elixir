@@ -48,4 +48,8 @@ defmodule Blackjack.Hand do
   def hide_face_down_cards(hand) do
     Enum.map(hand, fn card -> if card.face_down, do: Card.new(nil, nil, true), else: card end)
   end
+
+  def to_string(hand) do
+    "[#{Enum.join(hand, ", ")}]"
+  end
 end

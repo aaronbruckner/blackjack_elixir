@@ -116,4 +116,13 @@ defmodule BlackjackHandTest do
              %Card{suit: :heart, value: 2, face_down: false}
            ] = hand
   end
+
+  test "to_string - prints a string representation of the hand" do
+    hand =
+      Hand.new()
+      |> Hand.add_card(Card.new(:heart, 2, false))
+      |> Hand.add_card(Card.new(:heart, 3, true))
+
+    assert Hand.to_string(hand) === "[<Face Down>, 2 of hearts]"
+  end
 end
