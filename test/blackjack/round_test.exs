@@ -519,4 +519,12 @@ defmodule BlackjackRoundTest do
 
     assert Round.get_active_player_id(round) === nil
   end
+
+  test "get_player_by_id - returns player for ID" do
+    player_ids = ["p1", "p2", "p3"]
+
+    {round, _events} = Round.start_new_round(player_ids)
+
+    assert %Player{player_id: "p2"} = Round.get_player_by_id(round, "p2")
+  end
 end

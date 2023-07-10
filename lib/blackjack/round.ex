@@ -204,10 +204,19 @@ defmodule Blackjack.Round do
   """
   @spec get_active_player_id(t()) :: Player.player_id() | nil
   def get_active_player_id(round) do
-    case Enum.find(round.players, &(&1.status === :active)) do
-      nil -> nil
-      p -> p.player_id
-    end
+    Enum.find_value(round.players, fn p ->
+      if p.status === :active do
+        p.player_id
+      end
+    end)
+  end
+
+  @doc """
+  Returns the player object for the given player ID.
+  """
+  @spec get_player_by_id(t(), Player.player_id()) :: Player.t()
+  def get_player_by_id(round, player_id) do
+    Enum.find(round.players, fn p -> p.player_id === player_id end)
   end
 
   @spec get_player_score_at_position(t(), integer()) :: integer()
